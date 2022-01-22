@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
-@Service
+//@Service
 public class CommodityNotificationConsumer {
 
     private ObjectMapper objectMapper = new ObjectMapper();
