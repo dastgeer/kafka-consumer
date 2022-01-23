@@ -3,6 +3,7 @@ package com.kafka.kafkaconsumer.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kafka.kafkaconsumer.entity.CarLocation;
+import com.kafka.kafkaconsumer.errorhandler.kafkaGlobalErrorhandler;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,8 @@ public class KafkaConfig {
     //one more point there will be no override of kafkatemple in consumer side because it will taken care by kafkalistener, and their
     // kafkamessageListenerConstainer, KafkaListenerContainerFactory and all.cosumer coordinater will be take care for reaancing the partition
     //partitionassignor take care for this.
+
+
     @Bean
     public ConsumerFactory<Object,Object> consumerFactory(){
         Map<String, Object> consumerPropertiesMap = kafkaProperties.buildConsumerProperties();
@@ -34,6 +37,8 @@ public class KafkaConfig {
         return new DefaultKafkaConsumerFactory<>(consumerPropertiesMap);
     }
 
+
+    //this is container factory for specific consumer not globally means changes will not apply to all consumers
     //bean name should be same as what we have configured in consumer conatianerfactory attribute, method name also that will be very nice
     //ConcurrentKafkaListenerContainerFactory is class taken care for creating multiple kafkaLMessageListenerConatiner which will
     // listen messgae for each consumer instance in same consumer group,
@@ -68,5 +73,18 @@ public class KafkaConfig {
             }
         });
     return customContainerFactory;
+    }
+
+
+    //this is kafkaListenerCOntainerFactory is by default implemantion bean for all consumer in kafka
+    //whatever property we will set in this bean will be reflected as globally to all consumer
+    //so we have setted the global error handler which wil be refcted the globally consumer to hanlde error
+    // it will override the default implementation.
+    @Bean(value = "kafkaListenerContainerFactory")
+    public ConcurrentKafkaListenerContainerFactory<Object,Object> kafkaListenerContainerFactory(ConcurrentKafkaListenerContainerFactoryConfigurer configurer){
+        ConcurrentKafkaListenerContainerFactory<Object,Object> containerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+        configurer.configure(containerFactory,consumerFactory());
+        containerFactory.setErrorHandler(new kafkaGlobalErrorhandler());
+        return containerFactory;
     }
 }
